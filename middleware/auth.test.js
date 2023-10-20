@@ -5,6 +5,8 @@ const { UnauthorizedError } = require("../expressError");
 const {
   authenticateJWT,
   ensureLoggedIn,
+  ensureIsAdmin,
+  ensureIsAdminOrSelf
 } = require("./auth");
 
 
@@ -61,7 +63,7 @@ describe("ensureLoggedIn", function () {
   test("works", function () {
     expect.assertions(1);
     const req = {};
-    const res = { locals: { user: { username: "test", is_admin: false } } };
+    const res = { locals: { user: { username: "test", isAdmin: false } } };
     const next = function (err) {
       expect(err).toBeFalsy();
     };
@@ -77,4 +79,59 @@ describe("ensureLoggedIn", function () {
     };
     ensureLoggedIn(req, res, next);
   });
+});
+
+describe("ensureIsAdmin", function () {
+  test("works: is admin", function () {
+    expect.assertions(1);
+    const req = {};
+    const res = { locals: { user: { username: "adminuser", isAdmin: true } } };
+    const next = function (err) {
+      expect(err).toBeFalsy();
+    };
+    ensureIsAdmin(req, res, next);
+  });
+
+  test("unauth: is not admin", function () {
+    expect.assertions(1);
+    const req = {};
+    const res = { locals: { user: { username: "test", isAdmin: false } } };
+    const next = function (err) {
+      expect(err).toBeTruthy();
+    };
+    ensureIsAdmin(req, res, next);
+  });
+});
+
+describe("ensureIsAdminOrSelf", function () {
+  test("works: is admin", function () {
+    expect.assertions(1);
+    const req = { params: { username: "test" }};
+    const res = { locals: { user: { username: "adminuser", isAdmin: true } } };
+    const next = function (err) {
+      expect(err).toBeFalsy();
+    };
+    ensureIsAdminOrSelf(req, res, next);
+  });
+
+  test("works: is self", function () {
+    expect.assertions(2); // Why is this 2?
+    const req = { params: { username: "test" }};
+    const res = { locals: { user: { username: "test", isAdmin: false } } };
+    const next = function (err) {
+      expect(err).toBeTruthy();
+    };
+    ensureIsAdminOrSelf(req, res, next);
+  });
+
+  test("unauth: is not self", function () {
+    expect.assertions(1);
+    const req = { params: { username: "test2" }};
+    const res = { locals: { user: { username: "test", isAdmin: false } } };
+    const next = function (err) {
+      expect(err).toBeTruthy();
+    };
+    ensureIsAdminOrSelf(req, res, next);
+  });
+  
 });
