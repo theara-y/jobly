@@ -96,6 +96,119 @@ describe("GET /companies", function () {
     });
   });
 
+  test("filter by name", async function () {
+    const resp = await request(app).get("/companies")
+      .send({
+        nameLike: "1"
+      });
+    expect(resp.body).toEqual({
+      companies:
+          [
+            {
+              handle: "c1",
+              name: "C1",
+              description: "Desc1",
+              numEmployees: 1,
+              logoUrl: "http://c1.img",
+            },
+          ],
+    });
+  });
+
+  test("filter by minEmployees", async function () {
+    const resp = await request(app).get("/companies")
+      .send({
+        minEmployees: 3
+      });
+    expect(resp.body).toEqual({
+      companies:
+          [
+            {
+              handle: "c3",
+              name: "C3",
+              description: "Desc3",
+              numEmployees: 3,
+              logoUrl: "http://c3.img",
+            },
+          ],
+    });
+  });
+
+  test("filter by maxEmployees", async function () {
+    const resp = await request(app).get("/companies")
+      .send({
+        maxEmployees: 1
+      });
+    expect(resp.body).toEqual({
+      companies:
+          [
+            {
+              handle: "c1",
+              name: "C1",
+              description: "Desc1",
+              numEmployees: 1,
+              logoUrl: "http://c1.img",
+            },
+          ],
+    });
+  });
+
+  test("filter by min and maxEmployees", async function () {
+    const resp = await request(app).get("/companies")
+      .send({
+        minEmployees: 2,
+        maxEmployees: 3
+      });
+    expect(resp.body).toEqual({
+      companies:
+          [
+            {
+              handle: "c2",
+              name: "C2",
+              description: "Desc2",
+              numEmployees: 2,
+              logoUrl: "http://c2.img",
+            },
+            {
+              handle: "c3",
+              name: "C3",
+              description: "Desc3",
+              numEmployees: 3,
+              logoUrl: "http://c3.img",
+            },
+          ],
+    });
+  });
+
+  test("filter by invalid min and maxEmployees", async function () {
+    const resp = await request(app).get("/companies")
+      .send({
+        minEmployees: 3,
+        maxEmployees: 1
+      });
+    expect(resp.status).toBe(400);
+    expect(resp.body).toEqual({
+      error: {
+        status: 400,
+        message: "minEmployees cannot be greater than maxEmployees"
+      }
+    });
+  });
+
+  test("filter by unknown", async function () {
+    const resp = await request(app).get("/companies")
+      .send({
+        logoUrl: 'c1'
+      });
+    expect(resp.status).toBe(400);
+    expect(resp.body).toEqual({
+      error: {
+        status: 400,
+        message: expect.any(Array)
+      }
+    });
+  });
+
   test("fails: test next() handler", async function () {
     // there's no normal failure event which will cause this route to fail ---
     // thus making it hard to test that the error-handler works with it. This

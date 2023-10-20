@@ -11,6 +11,7 @@ const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
 const companyUpdateSchema = require("../schemas/companyUpdate.json");
+const companyFilterSchema = require("../schemas/companyFilter.json")
 
 const router = new express.Router();
 
@@ -43,8 +44,8 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  *   { companies: [ { handle, name, description, numEmployees, logoUrl }, ...] }
  *
  * Can filter on provided search filters:
- * - minEmployees
- * - maxEmployees
+ * - minEmployees - cannot be greater than maxEmployees
+ * - maxEmployees - cannot be less than minEmployees
  * - nameLike (will find case-insensitive, partial matches)
  *
  * Authorization required: none
@@ -52,7 +53,19 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
 
 router.get("/", async function (req, res, next) {
   try {
-    const companies = await Company.findAll();
+    const {minEmployees, maxEmployees} = req.body;
+    const validator = jsonschema.validate(req.body, companyFilterSchema);
+    if (!validator.valid) {
+      const errs = validator.errors.map(e => e.stack);
+      throw new BadRequestError(errs)
+    }
+    if (minEmployees !== undefined && maxEmployees !== undefined) {
+      if (minEmployees > maxEmployees) {
+        throw new BadRequestError("minEmployees cannot be greater than maxEmployees")
+      }
+    }
+
+    const companies = await Company.findAll(req.body);
     return res.json({ companies });
   } catch (err) {
     return next(err);

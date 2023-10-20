@@ -3,6 +3,7 @@
 const db = require("../db");
 const { BadRequestError, NotFoundError } = require("../expressError");
 const { sqlForPartialUpdate } = require("../helpers/sql");
+const format = require('pg-format');
 
 /** Related functions for companies. */
 
@@ -45,19 +46,48 @@ class Company {
   }
 
   /** Find all companies.
+   * 
+   * filters parameter is optional
+   * filters is of type object
+   * and can contain the following properties to
+   * build parts of the where clause:
+   * nameLike
+   * minEmployees
+   * maxEmployees
    *
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
-    const companiesRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           ORDER BY name`);
+  static async findAll(filters) {
+    const conditions = [];
+
+    // if filters are provided
+    // build where clause and convert to SQL safe strings using pg-format
+    if (filters) {
+      const {nameLike, minEmployees, maxEmployees} = filters;
+      if (nameLike)
+        conditions.push(format("name ILIKE %L", `%${nameLike}%`));
+      if (minEmployees)
+        conditions.push(format("num_employees >= %L", minEmployees));
+      if (maxEmployees)
+        conditions.push(format("num_employees <= %L", maxEmployees));
+    }
+
+    let whereClause = ''
+    if (conditions.length) {
+      whereClause = 'WHERE ' + conditions.join(' AND ')
+    }
+    
+    let query = 
+    `SELECT handle,
+        name,
+        description,
+        num_employees AS "numEmployees",
+        logo_url AS "logoUrl"
+    FROM companies ${whereClause}
+    ORDER BY name`
+
+    const companiesRes = await db.query(query);
     return companiesRes.rows;
   }
 
