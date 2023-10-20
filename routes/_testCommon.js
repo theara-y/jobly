@@ -102,6 +102,13 @@ async function commonAfterAll() {
   await db.end();
 }
 
+async function getJobId() {
+  const jobResult = await db.query(
+    "SELECT id FROM jobs WHERE title = 'Developer 2' LIMIT 1");
+  
+  return jobResult.rows[0].id;
+}
+
 
 const u1Token = createToken({ username: "u1", isAdmin: false });
 const adminToken = createToken({ username: "adminuser", isAdmin: true });
@@ -111,6 +118,7 @@ module.exports = {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  getJobId,
   u1Token,
   adminToken
 };

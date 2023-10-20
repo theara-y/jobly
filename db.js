@@ -7,14 +7,14 @@ let db;
 
 if (process.env.NODE_ENV === "production") {
   db = new Client({
-    connectionString: getDatabaseUri(),
+    connectionString: "postgresql://tya:password@localhost:5432/jobly" || getDatabaseUri(),
     ssl: {
       rejectUnauthorized: false
     }
   });
 } else {
   db = new Client({
-    connectionString: getDatabaseUri()
+    connectionString: "postgresql://tya:password@localhost:5432/jobly_test" || getDatabaseUri()
   });
 }
 

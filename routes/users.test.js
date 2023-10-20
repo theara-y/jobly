@@ -11,6 +11,7 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  getJobId,
   u1Token,
   adminToken
 } = require("./_testCommon");
@@ -19,6 +20,66 @@ beforeAll(commonBeforeAll);
 beforeEach(commonBeforeEach);
 afterEach(commonAfterEach);
 afterAll(commonAfterAll);
+
+/************************************** POST /users/:username/jobs/:id */
+
+describe("POST /users/:username/jobs/:id", function() {
+  test("works for regular users: apply for job", async function() {
+    const jobId = await getJobId();
+
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${jobId}`)
+      .set("authorization", `Bearer ${u1Token}`);
+
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      user: {
+        applied: jobId
+      }
+    });
+  });
+
+  test("works for admin users: apply for job for user", async function() {
+    const jobId = await getJobId();
+
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${jobId}`)
+      .set("authorization", `Bearer ${adminToken}`);
+
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      user: {
+        applied: jobId
+      }
+    });
+  });
+
+  test("unauth for regular users: apply for job for another user", async function() {
+    const resp = await request(app)
+      .post(`/users/u2/jobs/1`)
+      .set("authorization", `Bearer ${u1Token}`);
+
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("unauth for anon users: apply for job", async function() {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/1`);
+
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("bad request for regular users: job already applied", async function() {
+    const jobId = await getJobId();
+    await User.applyForJob("u1", jobId);
+
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${jobId}`)
+      .set("authorization", `Bearer ${u1Token}`);
+
+    expect(resp.statusCode).toEqual(400);
+  });
+});
 
 /************************************** POST /users */
 
@@ -141,6 +202,7 @@ describe("GET /users", function () {
           lastName: "user",
           email: "admin@user.com",
           isAdmin: true,
+          jobs: []
         },
         {
           username: "u1",
@@ -148,6 +210,7 @@ describe("GET /users", function () {
           lastName: "U1L",
           email: "user1@user.com",
           isAdmin: false,
+          jobs: []
         },
         {
           username: "u2",
@@ -155,6 +218,7 @@ describe("GET /users", function () {
           lastName: "U2L",
           email: "user2@user.com",
           isAdmin: false,
+          jobs: []
         },
         {
           username: "u3",
@@ -162,6 +226,7 @@ describe("GET /users", function () {
           lastName: "U3L",
           email: "user3@user.com",
           isAdmin: false,
+          jobs: []
         },
       ],
     });
@@ -206,6 +271,7 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        jobs: []
       },
     });
   });
@@ -221,6 +287,7 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        jobs: []
       },
     });
   });

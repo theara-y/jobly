@@ -14,6 +14,30 @@ const { BCRYPT_WORK_FACTOR } = require("../config.js");
 /** Related functions for users. */
 
 class User {
+
+  /**
+   * Apply for a job.
+   * @param {string} username 
+   * @param {int} jobId 
+   */
+  static async applyForJob(username, jobId) {
+    const getAppResult = await db.query(
+      `SELECT * FROM applications
+      WHERE username = $1 AND job_id = $2`
+      , [username, jobId]);
+
+    if (getAppResult.rows.length)
+      throw new BadRequestError("Bad Request: job already applied for.", 400)
+
+    await db.query(
+      `INSERT INTO applications
+        (username, job_id)
+      VALUES ($1, $2)`
+      , [username, jobId]);
+
+    return {applied: jobId}
+  }
+
   /** authenticate user with username, password.
    *
    * Returns { username, first_name, last_name, email, is_admin }
@@ -103,16 +127,11 @@ class User {
 
   static async findAll() {
     const result = await db.query(
-          `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
+          `SELECT username FROM users
            ORDER BY username`,
     );
-
-    return result.rows;
+    return await Promise.all(
+      result.rows.map(r => User.get(r.username)));
   }
 
   /** Given a username, return data about user.
@@ -124,20 +143,47 @@ class User {
    **/
 
   static async get(username) {
-    const userRes = await db.query(
-          `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
-           WHERE username = $1`,
-        [username],
-    );
+    const getUserResult = await db.query(
+          `SELECT u.username,
+                  u.first_name AS "firstName",
+                  u.last_name AS "lastName",
+                  u.email,
+                  u.is_admin AS "isAdmin",
+                  j.id,
+                  j.title,
+                  j.salary,
+                  j.equity,
+                  j.company_handle AS "companyHandle"
+           FROM users u
+           LEFT JOIN applications a
+           ON a.username = u.username
+           LEFT JOIN jobs j
+           ON j.id = a.job_id
+           WHERE u.username = $1`
+           , [username]);
 
-    const user = userRes.rows[0];
+    const rows = getUserResult.rows;
+    if (!rows.length) throw new NotFoundError(`No user: ${username}`);
 
-    if (!user) throw new NotFoundError(`No user: ${username}`);
+    const { firstName, lastName, email, isAdmin } = rows[0];
+    const user = {
+      username,
+      firstName,
+      lastName,
+      email,
+      isAdmin,
+      jobs: []
+    }
+
+    if (rows.length > 1 || rows[0].id) {
+      user.jobs = rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        salary: r.salary,
+        equity: r.equity,
+        companyHandle: r.companyHandle
+      }));
+    }
 
     return user;
   }

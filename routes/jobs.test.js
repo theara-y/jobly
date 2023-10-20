@@ -12,6 +12,7 @@ const {
   commonAfterAll,
   u1Token,
   adminToken,
+  getJobId,
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -323,25 +324,22 @@ describe("GET /jobs", function () {
 
 describe("GET /jobs/:id", function () {
   test("works for anon", async function () {
-    const jobResult = await db.query(
-      "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-
-    const jobId = jobResult.rows[0].id;
+    const jobId = await getJobId();
 
     const resp = await request(app).get(`/jobs/${jobId}`);
 
     expect(resp.body).toEqual({
       job: {
         id: jobId,
-        title: "Developer 1",
-        salary: 1111,
-        equity: "0.1",
+        title: "Developer 2",
+        salary: 2222,
+        equity: "0.2",
         company: {
-          handle: "c1",
-          name: "C1",
-          numEmployees: 1,
-          description: "Desc1",
-          logoUrl: "http://c1.img"
+          handle: "c2",
+          name: "C2",
+          numEmployees: 2,
+          description: "Desc2",
+          logoUrl: "http://c2.img"
         }
       },
     });
@@ -357,10 +355,7 @@ describe("GET /jobs/:id", function () {
 
 describe("PATCH /jobs/:id", function () {
   test("works for admin users", async function () {
-    const jobResult = await db.query(
-      "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-
-    const jobId = jobResult.rows[0].id;
+    const jobId = await getJobId();
 
     const resp = await request(app)
       .patch(`/jobs/${jobId}`)
@@ -377,7 +372,7 @@ describe("PATCH /jobs/:id", function () {
         title: "Developer 3",
         salary: 3333,
         equity: "0.3",
-        companyHandle: "c1",
+        companyHandle: "c2",
       },
     });
   });
@@ -449,10 +444,7 @@ describe("PATCH /jobs/:id", function () {
 
 describe("DELETE /jobs/:id", function () {
   test("works for admin users", async function () {
-    const jobResult = await db.query(
-      "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-
-    const jobId = jobResult.rows[0].id;
+    const jobId = await getJobId();
 
     const resp = await request(app)
       .delete(`/jobs/${jobId}`)

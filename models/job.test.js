@@ -7,6 +7,7 @@ const {
     commonBeforeEach,
     commonAfterEach,
     commonAfterAll,
+    getJobId,
 } = require("./_testCommon");
 const Job = require("./job.js");
 
@@ -108,24 +109,21 @@ describe("findAll", function () {
 
 describe("get", function () {
     test("works", async function () {
-        const jobResult = await db.query(
-            "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-
-        const jobId = jobResult.rows[0].id;
+        const jobId = await getJobId();
 
         let job = await Job.get(jobId);
 
         expect(job).toEqual({
             id: jobId,
-            title: "Developer 1",
-            salary: 1111,
-            equity: "0.1",
+            title: "Developer 2",
+            salary: 2222,
+            equity: "0.2",
             company: {
-                handle: "c1",
-                name: "C1",
-                numEmployees: 1,
-                description: "Desc1",
-                logoUrl: "http://c1.img"
+                handle: "c2",
+                name: "C2",
+                numEmployees: 2,
+                description: "Desc2",
+                logoUrl: "http://c2.img"
             }
         });
     });
@@ -150,10 +148,7 @@ describe("update", function () {
     };
 
     test("works", async function () {
-        const jobResult = await db.query(
-            "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-            
-        const jobId = jobResult.rows[0].id;
+        const jobId = await getJobId();
 
         let job = await Job.update(jobId, jobUpdate);
         
@@ -162,7 +157,7 @@ describe("update", function () {
             title: "New",
             salary: 100,
             equity: "0.99",
-            companyHandle: "c1"
+            companyHandle: "c2"
         });
     });
 
@@ -172,19 +167,16 @@ describe("update", function () {
             equity: null, // update equity to null
         };
 
-        const jobResult = await db.query(
-            "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-            
-        const jobId = jobResult.rows[0].id;
+        const jobId = await getJobId();
 
         let job = await Job.update(jobId, jobPartialUpdate);
         
         expect(job).toEqual({
             id: jobId,
             title: "New",
-            salary: 1111,
+            salary: 2222,
             equity: null,
-            companyHandle: "c1"
+            companyHandle: "c2"
         });
     });
 
@@ -199,12 +191,7 @@ describe("update", function () {
 
     test("bad request with no data", async function () {
         try {
-            const jobResult = await db.query(
-                "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-            
-            const jobId = jobResult.rows[0].id;
-
-            await Job.update(jobId, {});
+            await Job.update(1, {});
             fail();
         } catch (err) {
             expect(err instanceof BadRequestError).toBeTruthy();
@@ -216,10 +203,7 @@ describe("update", function () {
 
 describe("remove", function () {
     test("works", async function () {
-        const jobResult = await db.query(
-            "SELECT id FROM jobs WHERE title = 'Developer 1' LIMIT 1");
-                
-        const jobId = jobResult.rows[0].id;
+        const jobId = await getJobId();
 
         await Job.delete(jobId);
 

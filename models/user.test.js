@@ -12,12 +12,49 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  getJobId
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
 beforeEach(commonBeforeEach);
 afterEach(commonAfterEach);
 afterAll(commonAfterAll);
+
+/************************************** applyForJob */
+describe("applyForJob", function () {
+  test("works", async function () {
+    const jobId = await getJobId();
+    await User.applyForJob("u1", jobId)
+    const user = await User.get("u1");
+    expect(user).toEqual({
+      username: "u1",
+      firstName: "U1F",
+      lastName: "U1L",
+      email: "u1@email.com",
+      isAdmin: false,
+      jobs: [
+        {
+          id: jobId,
+          title: "Developer 2",
+          salary: 2222,
+          equity: "0.2",
+          companyHandle: "c2"
+        }
+      ]
+    })
+  })
+
+  test("bad request if job already applied", async function () {
+    const jobId = await getJobId();
+    await User.applyForJob("u1", jobId);
+    try {
+      await User.applyForJob("u1", jobId);
+      fail()
+    } catch (err) {
+      expect(err instanceof BadRequestError).toBeTruthy();
+    }
+  })
+});
 
 /************************************** authenticate */
 
@@ -117,6 +154,7 @@ describe("findAll", function () {
         lastName: "U1L",
         email: "u1@email.com",
         isAdmin: false,
+        jobs: []
       },
       {
         username: "u2",
@@ -124,6 +162,7 @@ describe("findAll", function () {
         lastName: "U2L",
         email: "u2@email.com",
         isAdmin: false,
+        jobs: []
       },
     ]);
   });
@@ -133,13 +172,14 @@ describe("findAll", function () {
 
 describe("get", function () {
   test("works", async function () {
-    let user = await User.get("u1");
+    const user = await User.get("u1");
     expect(user).toEqual({
       username: "u1",
       firstName: "U1F",
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      jobs: []
     });
   });
 
@@ -164,18 +204,18 @@ describe("update", function () {
   };
 
   test("works", async function () {
-    let job = await User.update("u1", updateData);
-    expect(job).toEqual({
+    const user = await User.update("u1", updateData);
+    expect(user).toEqual({
       username: "u1",
       ...updateData,
     });
   });
 
   test("works: set password", async function () {
-    let job = await User.update("u1", {
+    const user = await User.update("u1", {
       password: "new",
     });
-    expect(job).toEqual({
+    expect(user).toEqual({
       username: "u1",
       firstName: "U1F",
       lastName: "U1L",
@@ -215,7 +255,7 @@ describe("remove", function () {
   test("works", async function () {
     await User.remove("u1");
     const res = await db.query(
-        "SELECT * FROM users WHERE username='u1'");
+      "SELECT * FROM users WHERE username='u1'");
     expect(res.rows.length).toEqual(0);
   });
 

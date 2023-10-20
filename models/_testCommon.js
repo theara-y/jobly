@@ -8,6 +8,10 @@ async function commonBeforeAll() {
   await db.query("DELETE FROM companies");
   // noinspection SqlWithoutWhere
   await db.query("DELETE FROM users");
+  // noinspection SqlWithoutWhere
+  await db.query("DELETE FROM jobs");
+  // noinspection SqlWithoutWhere
+  await db.query("DELETE FROM applications");
 
   await db.query(`
     INSERT INTO companies(handle, name, num_employees, description, logo_url)
@@ -50,10 +54,17 @@ async function commonAfterAll() {
   await db.end();
 }
 
+async function getJobId() {
+  const jobResult = await db.query(
+    "SELECT id FROM jobs WHERE title = 'Developer 2' LIMIT 1");
+  return jobResult.rows[0].id;
+}
+
 
 module.exports = {
   commonBeforeAll,
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  getJobId
 };

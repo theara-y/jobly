@@ -14,6 +14,24 @@ const userUpdateSchema = require("../schemas/userUpdate.json");
 
 const router = express.Router();
 
+/**
+ * POST /:username/jobs/:id
+ * 
+ * Apply to job by id for user by username.
+ * 
+ * Return {user: {applied: id}}
+ * 
+ * Throws bad request error if already applied to.
+ */
+router.post("/:username/jobs/:id", ensureLoggedIn, ensureIsAdminOrSelf, async (req, res, next) => {
+  const { username, id } = req.params;
+  try {
+    const user = await User.applyForJob(username, parseInt(id))
+    return res.status(200).json({user});
+  } catch(err) {
+    return next(err);
+  }
+});
 
 /** POST / { user }  => { user, token }
  *
