@@ -3,6 +3,7 @@
 const db = require("../db");
 const { BadRequestError, NotFoundError } = require("../expressError");
 const { sqlForPartialUpdate } = require("../helpers/sql");
+const format = require('pg-format');
 
 /* Related functions for jobs */
 
@@ -77,13 +78,15 @@ class Job {
         const conditions = [];
 
         if (filters) {
-            const { nameLike, minEmployees, maxEmployees } = filters;
-            if (nameLike)
-                conditions.push(format("name ILIKE %L", `%${nameLike}%`));
-            if (minEmployees)
-                conditions.push(format("num_employees >= %L", minEmployees));
-            if (maxEmployees)
-                conditions.push(format("num_employees <= %L", maxEmployees));
+            const { title, minSalary, hasEquity } = filters;
+            if (title)
+                conditions.push(format("title ILIKE %L", `%${title}%`));
+            if (minSalary)
+                conditions.push(format("salary >= %L", minSalary));
+            if (hasEquity !== undefined && hasEquity)
+                conditions.push(format("equity >= 0"));
+            else if (hasEquity !== undefined && !hasEquity)
+                conditions.push(format("(equity = 0 OR equity = NULL)"))
         }
 
         let whereClause = ''
