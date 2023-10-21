@@ -115,11 +115,11 @@ describe("ensureIsAdminOrSelf", function () {
   });
 
   test("works: is self", function () {
-    expect.assertions(2); // Why is this 2?
+    expect.assertions(1);
     const req = { params: { username: "test" }};
     const res = { locals: { user: { username: "test", isAdmin: false } } };
     const next = function (err) {
-      expect(err).toBeTruthy();
+      expect(err).toBeFalsy();
     };
     ensureIsAdminOrSelf(req, res, next);
   });
